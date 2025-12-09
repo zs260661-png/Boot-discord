@@ -14,26 +14,27 @@ const client = new Client({
 // LISTA DE LOCAIS PARA ROUBO
 const roubos = {
     // LOS SANTOS
-    banco_ls: { nome: "Banco de Los Santos", tempoRoubo: 10 * 60, status: "livre" },
-    loterica_ls: { nome: "Lotérica de Los Santos", tempoRoubo: 8 * 60, status: "livre" },
-    armas_ls1: { nome: "Loja de Armas 1", tempoRoubo: 6 * 60, status: "livre" },
-    armas_ls2: { nome: "Loja de Armas 2", tempoRoubo: 6 * 60, status: "livre" },
+    // CHAVE ORIGINAL: banco_ls
+    "banco ls": { nome: "Banco de Los Santos", tempoRoubo: 10 * 60, status: "livre" },
+    "loterica ls": { nome: "Lotérica de Los Santos", tempoRoubo: 8 * 60, status: "livre" },
+    "armas ls1": { nome: "Loja de Armas 1", tempoRoubo: 6 * 60, status: "livre" },
+    "armas ls2": { nome: "Loja de Armas 2", tempoRoubo: 6 * 60, status: "livre" },
     puteiro: { nome: "Puteiro", tempoRoubo: 7 * 60, status: "livre" },
     motel: { nome: "Motel", tempoRoubo: 7 * 60, status: "livre" },
 
     // LAS VENTURAS
-    cassino_lv: { nome: "Cassino", tempoRoubo: 15 * 60, status: "livre" },
+    "cassino lv": { nome: "Cassino", tempoRoubo: 15 * 60, status: "livre" },
 
     // SAN FIERRO
-    banco_sf: { nome: "Banco Central", tempoRoubo: 10 * 60, status: "livre" },
-    armas_sf: { nome: "Loja de Armas 3", tempoRoubo: 6 * 60, status: "livre" },
-    loterica_sf: { nome: "Lotérica de San Fierro", tempoRoubo: 8 * 60, status: "livre" },
+    "banco sf": { nome: "Banco Central", tempoRoubo: 10 * 60, status: "livre" },
+    "armas sf": { nome: "Loja de Armas 3", tempoRoubo: 6 * 60, status: "livre" },
+    "loterica sf": { nome: "Lotérica de San Fierro", tempoRoubo: 8 * 60, status: "livre" },
     navio: { nome: "Navio", tempoRoubo: 12 * 60, status: "livre" },
-    bar_sf: { nome: "Bar San Fierro", tempoRoubo: 5 * 60, status: "livre" },
+    "bar sf": { nome: "Bar San Fierro", tempoRoubo: 5 * 60, status: "livre" },
 
     // OUTROS
-    cofre_bps: { nome: "Cofre BPS", tempoRoubo: 20 * 60, status: "livre" },
-    ilha_pirata: { nome: "Ilha Pirata", tempoRoubo: 30 * 60, status: "livre" }
+    "cofre bps": { nome: "Cofre BPS", tempoRoubo: 20 * 60, status: "livre" },
+    "ilha pirata": { nome: "Ilha Pirata", tempoRoubo: 30 * 60, status: "livre" }
 };
 
 client.on("ready", () => {
@@ -41,13 +42,28 @@ client.on("ready", () => {
 });
 
 client.on("messageCreate", (msg) => {
-    if (!msg.content.startsWith("!")) return;
+    // 1. MUDANÇA: Novo prefixo é '/'
+    if (!msg.content.startsWith("/")) return;
 
-    const args = msg.content.slice(1).split(" ");
-    const local = args[0];   // ex: banco_ls
-    const action = args[1];  // ex: iniciou
+    // Converte a mensagem para minúsculas para facilitar a comparação (ex: 'Banco Ls' vira 'banco ls')
+    const content = msg.content.slice(1).toLowerCase();
 
-    if (action !== "iniciou") return;
+    // O comando é 'local iniciou' (ex: 'banco ls iniciou')
+    const actionKeyword = "iniciou";
+
+    // 2. MUDANÇA: Separa o local do comando 'iniciou'
+    // Verifica se a mensagem termina com a palavra-chave de ação
+    if (!content.endsWith(` ${actionKeyword}`)) return;
+
+    // Extrai o nome do local removendo a palavra-chave de ação
+    // Ex: 'banco ls iniciou' -> 'banco ls'
+    const localComEspaco = content.substring(0, content.length - actionKeyword.length).trim();
+    
+    // O local agora pode ter espaços (ex: 'banco ls')
+    const local = localComEspaco;
+    
+    // A ação (action) é sempre 'iniciou' se passou na verificação acima
+    // Não precisamos mais da variável 'action' no fluxo principal
 
     if (!roubos[local]) {
         return msg.reply("⚠ Local não encontrado!");
@@ -60,11 +76,13 @@ client.on("messageCreate", (msg) => {
 
     // INICIA O ROUBO
     r.status = "roubando";
+    r.tempoFim = Date.now() + r.tempoRoubo * 1000; // Adicionando tempoFim para melhorias futuras
     msg.reply(`🔸 **${r.nome}**: Roubo iniciado!\n⏳ Tempo: **${r.tempoRoubo / 60} min**`);
 
     setTimeout(() => {
         r.status = "cooldown";
-        msg.channel.send(`⛔ **${r.nome}** finalizou o roubo e entrou em cooldown!`);
+        msg.channel.send(`⛔ **${r.nome}** finalizou o roubo e entrou em cooldown!
+        😴 Duração do Cooldown: **${(r.tempoRoubo / 2) / 60} min**.`); // Adicionando tempo de cooldown na mensagem
 
         // cooldown = metade do tempo do roubo
         setTimeout(() => {
