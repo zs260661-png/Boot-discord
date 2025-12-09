@@ -1,0 +1,12 @@
+{
+  "name": "bot-discord-roubo",
+  "version": "1.0.0",
+  "description": "Bot de roubo com cooldown para vários locais",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.13.0"
+  }
+}
