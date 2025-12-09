@@ -11,16 +11,15 @@ const client = new Client({
     ]
 });
 
-// LISTA DE LOCAIS PARA ROUBO
+// LISTA DE LOCAIS PARA ROUBO - CHAVES COM ESPAÇO
 const roubos = {
     // LOS SANTOS
-    // CHAVE ORIGINAL: banco_ls
     "banco ls": { nome: "Banco de Los Santos", tempoRoubo: 10 * 60, status: "livre" },
     "loterica ls": { nome: "Lotérica de Los Santos", tempoRoubo: 8 * 60, status: "livre" },
     "armas ls1": { nome: "Loja de Armas 1", tempoRoubo: 6 * 60, status: "livre" },
     "armas ls2": { nome: "Loja de Armas 2", tempoRoubo: 6 * 60, status: "livre" },
-    puteiro: { nome: "Puteiro", tempoRoubo: 7 * 60, status: "livre" },
-    motel: { nome: "Motel", tempoRoubo: 7 * 60, status: "livre" },
+    "puteiro": { nome: "Puteiro", tempoRoubo: 7 * 60, status: "livre" }, // Sem espaço
+    "motel": { nome: "Motel", tempoRoubo: 7 * 60, status: "livre" },   // Sem espaço
 
     // LAS VENTURAS
     "cassino lv": { nome: "Cassino", tempoRoubo: 15 * 60, status: "livre" },
@@ -29,7 +28,7 @@ const roubos = {
     "banco sf": { nome: "Banco Central", tempoRoubo: 10 * 60, status: "livre" },
     "armas sf": { nome: "Loja de Armas 3", tempoRoubo: 6 * 60, status: "livre" },
     "loterica sf": { nome: "Lotérica de San Fierro", tempoRoubo: 8 * 60, status: "livre" },
-    navio: { nome: "Navio", tempoRoubo: 12 * 60, status: "livre" },
+    "navio": { nome: "Navio", tempoRoubo: 12 * 60, status: "livre" }, // Sem espaço
     "bar sf": { nome: "Bar San Fierro", tempoRoubo: 5 * 60, status: "livre" },
 
     // OUTROS
@@ -42,31 +41,22 @@ client.on("ready", () => {
 });
 
 client.on("messageCreate", (msg) => {
-    // 1. MUDANÇA: Novo prefixo é '/'
+    // Novo prefixo '/'
     if (!msg.content.startsWith("/")) return;
 
-    // Converte a mensagem para minúsculas para facilitar a comparação (ex: 'Banco Ls' vira 'banco ls')
+    // Converte a mensagem para minúsculas
     const content = msg.content.slice(1).toLowerCase();
-
-    // O comando é 'local iniciou' (ex: 'banco ls iniciou')
     const actionKeyword = "iniciou";
 
-    // 2. MUDANÇA: Separa o local do comando 'iniciou'
-    // Verifica se a mensagem termina com a palavra-chave de ação
+    // 1. Verifica se a mensagem termina com a palavra-chave de ação
     if (!content.endsWith(` ${actionKeyword}`)) return;
 
-    // Extrai o nome do local removendo a palavra-chave de ação
-    // Ex: 'banco ls iniciou' -> 'banco ls'
-    const localComEspaco = content.substring(0, content.length - actionKeyword.length).trim();
+    // 2. Extrai o nome do local (a chave que pode ter espaços)
+    const local = content.substring(0, content.length - actionKeyword.length).trim();
     
-    // O local agora pode ter espaços (ex: 'banco ls')
-    const local = localComEspaco;
-    
-    // A ação (action) é sempre 'iniciou' se passou na verificação acima
-    // Não precisamos mais da variável 'action' no fluxo principal
-
-    if (!roubos[local]) {
-        return msg.reply("⚠ Local não encontrado!");
+    // 3. MUDANÇA CRÍTICA: Acesso ao objeto roubos usando a variável [local]
+    if (!roubos[local]) { // Usa colchetes [] para acessar a chave com espaço
+        return msg.reply("⚠ Local não encontrado! Tente, por exemplo, /banco ls iniciou");
     }
 
     const r = roubos[local];
@@ -76,13 +66,15 @@ client.on("messageCreate", (msg) => {
 
     // INICIA O ROUBO
     r.status = "roubando";
-    r.tempoFim = Date.now() + r.tempoRoubo * 1000; // Adicionando tempoFim para melhorias futuras
+    r.tempoFim = Date.now() + r.tempoRoubo * 1000;
     msg.reply(`🔸 **${r.nome}**: Roubo iniciado!\n⏳ Tempo: **${r.tempoRoubo / 60} min**`);
 
     setTimeout(() => {
         r.status = "cooldown";
+        const cooldownMin = (r.tempoRoubo / 2) / 60;
+        
         msg.channel.send(`⛔ **${r.nome}** finalizou o roubo e entrou em cooldown!
-        😴 Duração do Cooldown: **${(r.tempoRoubo / 2) / 60} min**.`); // Adicionando tempo de cooldown na mensagem
+        😴 Duração do Cooldown: **${cooldownMin} min**.`);
 
         // cooldown = metade do tempo do roubo
         setTimeout(() => {
