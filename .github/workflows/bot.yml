@@ -2,25 +2,29 @@ name: Bot Discord
 
 on:
   push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Baixar repositório
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4 # Atualizei para a versão mais recente
+        
       - name: Instalar Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # Atualizei para a versão mais recente
         with:
           node-version: 18
-
+          
       - name: Instalar dependências
         run: npm install
-
+        
       - name: Iniciar bot
+        # Aqui está a correção: o bloco 'env' passa o Secret para o código
         env:
-          TOKEN: ${{ secrets.TOKEN }}
+          # O nome da variável no index.js será process.env.TOKEN
+          TOKEN: ${{ secrets.TOKEN }} 
         run: node index.js
